@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 2.8)
+project( line_draw )
+find_package( OpenCV REQUIRED )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+add_executable( line_draw main.cpp )
+target_link_libraries( line_draw ${OpenCV_LIBS} )
