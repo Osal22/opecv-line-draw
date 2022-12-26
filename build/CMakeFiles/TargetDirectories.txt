@@ -1,0 +1,3 @@
+/home/goalbytes/_dev/opecv-line-draw/build/CMakeFiles/line_draw.dir
+/home/goalbytes/_dev/opecv-line-draw/build/CMakeFiles/edit_cache.dir
+/home/goalbytes/_dev/opecv-line-draw/build/CMakeFiles/rebuild_cache.dir
