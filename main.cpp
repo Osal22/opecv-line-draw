@@ -5,7 +5,7 @@
 #include <opencv2/imgproc.hpp>
 #include <thread>
 #include <chrono>
-
+// #include "entity.h"
 using namespace cv;
 using namespace std;
 
@@ -16,8 +16,14 @@ std::vector<cv::Point> mouse_event;
 std::vector<cv::Point>::iterator mouse_event_itr;
 bool draw_status=false,draw_circle=false;
 char key_vlaue='a';
-cv::Rect bounderies = Rect(0, 0, 10, 50);
 
+struct line_p
+{
+	cv::Point start;
+	cv::Point end;	
+};
+
+std::vector<line_p>line_p_holder;
 
 struct line_e
 {
@@ -32,7 +38,7 @@ line_e line_calculated;
 line_e line_1;
 line_e line_2;
 
-int slope_line(cv::Point first,cv::Point second)
+int slope_line(cv::Point &first,cv::Point &second)
 {
 	if(second==first)
 	{
@@ -50,7 +56,7 @@ int slope_line(cv::Point first,cv::Point second)
 	}
 }
 
-int dist_formula(cv::Point first,cv::Point second)
+float dist_formula(cv::Point first,cv::Point second)
 {
 	if(first==second)
 	{
@@ -60,14 +66,14 @@ int dist_formula(cv::Point first,cv::Point second)
 	{
 	int diff_x=abs(second.x-first.x);
 	int diff_y=abs(second.y-first.y);
-	int dist= sqrt(diff_x*diff_x+diff_y*diff_y);
+	float dist= sqrt(diff_x*diff_x+diff_y*diff_y);
 	return dist;
 	}
 
 }
 
 
-void draw_cv_vector(cv::Mat img_frame,std::vector<cv::Point> draw_cv_vec_){
+void draw_cv_vector(cv::Mat &img_frame,std::vector<cv::Point> &draw_cv_vec_){
 	std::vector<cv::Point>::iterator draw_cv_vec_itr;
 	if(draw_cv_vec_.size()>=2)
 	{
@@ -79,7 +85,6 @@ void draw_cv_vector(cv::Mat img_frame,std::vector<cv::Point> draw_cv_vec_){
 		if(i%2==0)
 		{
 		cv::line(img_frame,*(draw_cv_vec_itr-1),*draw_cv_vec_itr,cv::Scalar(0, 0, 0),1,cv::LINE_8);
-		 line_vector.push_back( make_pair(*(draw_cv_vec_itr-1),*draw_cv_vec_itr) );
 		}
 	}
 	}
@@ -102,8 +107,6 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
 	 }
      else if  ( event == EVENT_RBUTTONDOWN )
      {
-	    
-       
 		x_button_r=x;
 	    y_button_r=y;
      }
@@ -113,8 +116,6 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
      }
      else if ( event == EVENT_MOUSEMOVE )
      {
-	    
-        
 		x_cursor=x;
 	    y_cursor=y;
 
@@ -123,79 +124,81 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata)
 
 int main(int argc, char** argv)
 {	
+	mouse_event.clear();
+	std::string image_path = "/home/goalbytes/_dev/opecv-line-draw/office.png";
 	
 	while(1)
 	{
 	auto start_time = std::chrono::high_resolution_clock::now();
-
-
-		if(mouse_event.size()>1){
-			
-		}
-	// Mat image(500, 500, CV_8UC3,Scalar(23, 78, 0));
-	std::string image_path = "/home/goalbytes/_dev/opecv-line-draw/map.pgm";
 	Mat image = imread(image_path, IMREAD_COLOR);
+
+
+		
+
 	draw_cv_vector(image,mouse_event);
-	//std::thread thread_draw(draw_cv_vector,image,mouse_event);
-	//thread_draw.join();
 	if (!image.data) {
 		cout << "Could not open or find"<< " the image";
 		return 0;
 	}
-	Point p1(0, 0), p2(100, 0);
-	Point p3(200, 0), p4(500, 500);
+
 	int thickness = 2;
  	namedWindow("Output", cv::WINDOW_NORMAL);
 	setMouseCallback("Output", CallBackFunc, NULL);
 	std::string draw_status_str=std::to_string(draw_status);
 	std::string draw_status_strt="status "+draw_status_str;
 	cv::putText(image,draw_status_strt,cv::Point(10,465),cv:: FONT_HERSHEY_COMPLEX_SMALL,1,cv::Scalar(0,255,0),2,false);
-	// cv::rectangle(image,)
 	if(clicks_track%2==0)
 	{
 	if(draw_status==true)
 	{
 	line(image,cv::Point(x_button_l,y_button_l),cv::Point(x_cursor,y_cursor),cv::Scalar(0, 0, 0),1,cv::LINE_8);
+	float dist_points=dist_formula(cv::Point(x_button_l,y_button_l),cv::Point(x_cursor,y_cursor));
+	dist_points=dist_points*0.05;
+	std::cout<<"dist:= "<<dist_points<<std::endl;
+	std::string dist_txt=to_string(dist_points);
+	cv::putText(image,dist_txt,cv::Point(10,495),cv:: FONT_HERSHEY_COMPLEX_SMALL,1,cv::Scalar(0,255,0),2,false);
 	}
 	if(draw_circle==true){
-		int radius=dist_formula(cv::Point(x_button_l,y_button_l),cv::Point(x_cursor,y_cursor));
-		// std::cout<<radius<<std::endl;
-	circle(image,cv::Point(x_button_l,y_button_l),radius+1,cv::Scalar(0, 255, 0),1);	
-	}
-	}
+		float radius=dist_formula(cv::Point(x_button_l,y_button_l),cv::Point(x_cursor,y_cursor));
+	circle(image,cv::Point(x_button_l,y_button_l),radius+1,cv::Scalar(0, 255, 0),1);
 
+	
+	}
+	}
+	
 	for(auto itr=mouse_event.begin();itr!=mouse_event.end();itr++)
 	{
 		int _dist=dist_formula(cv::Point(itr->x,itr->y),cv::Point(x_cursor,y_cursor));
-		// std::cout<<_dist<<std::endl;
 		if(_dist<2)
 		{
-			circle(image,cv::Point(itr->x,itr->y),2,cv::Scalar(0, 0, 255),1);	
+			circle(image,cv::Point(itr->x,itr->y),3,cv::Scalar(0, 0, 255),1);	
 
 		}
 	}
 
 
-	// line_e_holder.clear();
+	line_e_holder.clear();
+	line_p_holder.clear();
+	
 
 	// for(auto itr=line_vector.begin();itr!=line_vector.end();itr++)
 	// {
-	// 	auto slope_l=slope_line(itr->first,itr->second);
-	// 	cv::Point first_point_line=itr->first;
-	// 	cv::Point seond_point_line=itr->second;
 
-	// 	// y=mx+c
-	// 	//c=mx-y
-	// 	int m=slope_line(first_point_line,seond_point_line);
-	// 	int c=m*first_point_line.x-first_point_line.y;
-	// 	// std::cout<<c<<" c of line and slope "<<slope_line<<std::endl;
-	// 	line_calculated.x=first_point_line.x;
-	// 	line_calculated.y=first_point_line.y;
-	// 	line_calculated.c=c;
-	// 	line_calculated.m=m;
-	// 	// line_e_holder.push_back(line_calculated);
+		// cv::Point first_point_line=itr->first;
+		// cv::Point seond_point_line=itr->second;
 
-	// 	// std::cout<<"line start point:= "<<itr->first<<" line end point:= "<<itr->second<<std::endl;
+		// y=mx+c
+		//c=mx-y
+		// int m=slope_line((itr->first),(itr->second));
+		// int c=m*first_point_line.x-first_point_line.y;
+		// std::cout<<c<<" c of line and slope "<<slope_line<<std::endl;
+		// line_calculated.x=first_point_line.x;
+		// line_calculated.y=first_point_line.y;
+		// line_calculated.c=c;
+		// line_calculated.m=m;
+		// line_e_holder.push_back(line_calculated);
+
+		// std::cout<<"line start point:= "<<itr->first<<" line end point:= "<<itr->second<<std::endl;
 	// }
 
 	// for(auto itr:line_e_holder)
@@ -220,6 +223,8 @@ int main(int argc, char** argv)
 	// {
 	// 	std::cout<<"inside rectangle"<<std::endl;
 	// }
+	// std::cout<<image.at<Vec3b>(x_cursor,y_cursor)<<std::endl;
+
 	imshow("Output", image);
 	key_vlaue=waitKey(1);
 	if(key_vlaue=='d')
@@ -268,7 +273,7 @@ int main(int argc, char** argv)
 	  auto end_time = std::chrono::high_resolution_clock::now();
 	  auto time = end_time - start_time;
 
-		std::cout <<time/std::chrono::milliseconds(1) << "ms to run.\n";
+		// std::cout <<time/std::chrono::milliseconds(1) << "ms to run.\n";
 	}
 	
 
